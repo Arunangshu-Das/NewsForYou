@@ -3,35 +3,15 @@ $(document).ready(function () {
     if(sessionStorage.getItem("newsid")==null){
         window.location.href = 'Startup.html';
     }
-    fetchAllData();
-    $.ajax({
-        url: 'https://localhost:7235/api/GetCategoriesFromAgencyId',
-        type: 'GET',
-        data: {id:parseInt(sessionStorage.getItem("newsid"))},
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function (result) {
-            populateSidebar(result)
-        },
-        error: function () {
-            alert('Error while making the AJAX call.');
-        }
-    });
+    var payload={
+        id:parseInt(sessionStorage.getItem("newsid"))
+    }
+    fetchAllData(payload);
+    makeGetRequest('GetCategoriesFromAgencyId',payload,populateSidebar,error,false);
 });
 
-function fetchAllData(){
-    $.ajax({
-        url: 'https://localhost:7235/api/getallnews',
-        type: 'GET',
-        data: {id:parseInt(sessionStorage.getItem("newsid"))},
-        dataType: 'json',
-        success: function (result) {
-            getallnews(result['allnews'])
-        },
-        error: function () {
-            alert('Error while making the AJAX call.');
-        }
-    });
+function fetchAllData(payload){
+    makeGetRequest('news',{id:parseInt(sessionStorage.getItem("newsid"))},displayallnews,error,false);
 }
 
 function geturl(url){
@@ -52,8 +32,9 @@ function geturl(url){
     return src;
 }
 
-function getallnews(data) {
+function displayallnews(data) {
     console.log(data)
+    data=data['allnews']
     const container = document.getElementById('news');
     
     container.innerHTML = '';
@@ -62,7 +43,6 @@ function getallnews(data) {
         const row = document.createElement('div');
         row.classList.add('row', 'row-eq-height'); 
         
-        // Loop through the current set of 3 items
         for (let j = i; j < i + 3 && j < data.length; j++) {
             const element = data[j];
             var cardDiv = document.createElement('div');
@@ -121,57 +101,16 @@ function handleCheckboxClick(){
         categories: checkboxArray,
         id: sessionStorage.getItem("newsid")
     };
-    $.ajax({
-        url: 'https://localhost:7235/api/getnewsbycategories',
-        type: 'POST',
-        data: JSON.stringify(payload),
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function(result) {
-            getallnews(result.getnesfromcategory)
-        },
-        error: function() {
-            // Handle error response
-            alert('Error while making the AJAX call.');
-        }
-    });
+    makePostRequest('getnewsbycategories',payload,displayallnews,error,false);
 }
 
 
 
 function readit(e,link){
-    $.ajax({
-        url: 'https://localhost:7235/api/incrementnewsclickcount',
-        type: 'GET',
-        data: {id:parseInt(e.id)},
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function(result) {
-        },
-        error: function() {
-            // Handle error response
-            alert('Error while making the AJAX call.');
-        }
-    });
+    makeGetRequest('incrementnewsclickcount',{id:parseInt(e.id)},null,error);
     window.location.href = link;
 }
 
-// // Check for the presence of the "credential" cookie
-// function checkCookie() {
-//     var cookies = document.cookie.split(';');
-//     var isLoggedIn = cookies.some(cookie => cookie.trim().startsWith('credential='));
-//     if (isLoggedIn) {
-//         document.getElementById("logoutLink").style.display = "block";
-//     } else {
-//         document.getElementById("loginLink").style.display = "block";
-//         document.getElementById("signupLink").style.display = "block";
-//     }
-// }
-
-// // Function to logout
-// function logout() {
-//     // Clear the credential cookie
-//     document.cookie = "credential=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-//     // Redirect to login page
-//     window.location.href = "login.html";
-// }
+function error() {
+    alert('Error while making the AJAX call.');
+}

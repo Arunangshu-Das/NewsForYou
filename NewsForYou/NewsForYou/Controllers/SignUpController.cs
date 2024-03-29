@@ -1,28 +1,38 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using NewsForYou.Business;
 using NewsForYou.Models;
 
 namespace NewsForYou.Controllers
 {
-    public class SignUpController : Controller
+    [Route("api")]
+    [ApiController]
+    public class SignUpController : ControllerBase
     {
-        private IService _service;
 
-        public SignUpController(IService service)
+        private IService _service;
+        private IConfiguration config;
+
+        public SignUpController(IService service, IConfiguration configuration)
         {
             _service = service;
-        }
-
-        public IActionResult Index()
-        {
-            return View();
+            config = configuration;
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignUp(SignUp model)
+        [Route("signup")]
+        public async Task<IActionResult> SignUp(UserModel model)
         {
             bool flag = await _service.SignUp(model);
-            return Json(flag);
+            return Ok(new { flag });
+        }
+
+        [HttpGet]
+        [Route("checkemail")]
+        public async Task<IActionResult> FindEmail(string id)
+        {
+            bool flag = await _service.FindEmail(id);
+            return Ok(new { flag });
         }
     }
 }

@@ -1,20 +1,12 @@
 $(document).ready(function () {
     $('#navbar').load('Navbar.html');
-    $.ajax({
-        url: 'https://localhost:7235/api/getagency',
-        type: 'GET',
-        dataType: 'json',
-        success: function (result) {
-            console.log(result)
-            populatepaper(result.result)
-        },
-        error: function () {
-            alert('Error while making the AJAX call.');
-        }
-    });
+    makeGetRequest('agency',null,populatePaper,function () {
+        alert('Error while making the AJAX call.');
+    },false);
 });
 
-function populatepaper(data) {
+function populatePaper(data) {
+    data=data.result;
     const container = document.getElementById('allpaper');
     
     container.innerHTML = '';

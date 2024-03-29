@@ -8,7 +8,7 @@ namespace NewsForYou.Models
 {
     public class GetNewsByCategoriesModel
     {
-        public List<int> categories {  get; set; }
-        public int id {  get; set; }
+        public List<int> Categories { get; set; } = null!;
+        public int Id {  get; set; }
     }
 }

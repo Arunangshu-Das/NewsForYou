@@ -6,14 +6,9 @@ using System.Threading.Tasks;
 
 namespace NewsForYou.Logger
 {
-    public class Logger:ILogger
+    public class Logger(string folderpath) : ILogger
     {
-        private readonly string _folderpath;
-
-        public Logger(string folderpath)
-        {
-            _folderpath = folderpath;
-        }
+        private readonly string _folderpath = folderpath;
 
         public void AddException(Exception data)
         {
@@ -27,10 +22,8 @@ namespace NewsForYou.Logger
                 }
 
                 string path = _folderpath + "\\" + fileName;
-                using (StreamWriter writer = new StreamWriter(path, true))
-                {
-                    writer.WriteLine(data.ToString());
-                }
+                using StreamWriter writer = new StreamWriter(path, true);
+                writer.WriteLine(data.ToString());
             }
             catch (Exception e)
             {

@@ -4,9 +4,15 @@ using NewsForYou.Business;
 using NewsForYou.DAL;
 using NewsForYou.DAL.Models;
 using Microsoft.Extensions.Options;
-
+using NewsForYou;
+using Microsoft.AspNetCore.Diagnostics;
+using System.Net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowOrigin",
@@ -18,6 +24,20 @@ builder.Services.AddCors(options => {
                    .AllowCredentials();  // If your request includes credentials like cookies, you need to allow credentials.
         });
 });
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidateIssuer = true,
+            ValidateLifetime = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -42,6 +62,8 @@ var app = builder.Build();
 
 app.UseCors("AllowOrigin");
 
+app.UseAuthentication();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -55,7 +77,27 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseExceptionHandler(
+    options =>
+    {
+        options.Run(
+            async context =>
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+                if (exceptionHandlerPathFeature?.Error != null)
+                {
+                    var logger = context.RequestServices.GetRequiredService<NewsForYou.Logger.ILogger>();
+                    var exception = exceptionHandlerPathFeature.Error;
+                    logger.AddException(exception);
+                }
+            }
+        );
+    }
+);
+
 app.UseAuthorization();
+
 
 app.MapControllerRoute(
     name: "default",

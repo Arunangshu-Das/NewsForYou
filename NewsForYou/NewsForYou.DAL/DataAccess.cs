@@ -27,66 +27,29 @@ namespace NewsForYou.DAL
             this.logger = logger;
         }
 
-        public async Task<bool> SignUp(SignUp signup)
+        public async Task<bool> SignUp(User newStudent)
         {
             bool flag = false;
-            try
-            {
-                using (var transaction = await context.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        User newStudent = new User
-                        {
-                            Name = signup.Name,
-                            Email = signup.Email,
-                            Password = signup.Password
-                        };
-                        await context.Users.AddAsync(newStudent);
-                        await context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                        flag = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        logger.AddException(ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+            await context.Users.AddAsync(newStudent);
+            await context.SaveChangesAsync();
+            flag = true;
             return flag;
         }
 
-
-        public async Task<(bool, string)> Login(LoginModel login)
+        public async Task<UserModel?> Login(LoginModel login)
         {
             bool flag = false;
-            string token = null;
-            try
-            {
-                User user = await context.Users.FirstOrDefaultAsync(u => u.Email == login.Email);
+            User user = await context.Users.FirstOrDefaultAsync(u => u.Email == login.Email);
 
-                if (user != null)
+            if (user != null)
+            {
+                if (user.Password == login.Password)
                 {
-                    if (user.Password == login.Password)
-                    {
-                        flag = true;
-                        token = GenerateJwtToken(user);
-                    }
+                    flag = true;
                 }
-
             }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
-            return (flag, token);
+            return flag ? new UserModel { Name = user.Name, Email = user.Email } : null;
         }
-
 
         private string GenerateJwtToken(User user)
         {
@@ -110,111 +73,49 @@ namespace NewsForYou.DAL
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-
-        public async Task<bool> AddCategory(CategoryModel category)
+        public async Task<bool> AddCategory(Category newCategory)
         {
             bool flag = false;
-            try
-            {
-                using (var transaction = await context.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        Category newCategory = new Category
-                        {
-                            CategoryTitle = category.Title,
-                        };
-                        await context.Categories.AddAsync(newCategory);
-                        await context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                        flag = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        logger.AddException(ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+            await context.Categories.AddAsync(newCategory);
+            await context.SaveChangesAsync();
+            flag = true;
             return flag;
         }
 
         public async Task<bool> AddAgency(AgencyModel agency)
         {
             bool flag = false;
-            try
+            Agency newAgency = new Agency
             {
-                using (var transaction = await context.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        Agency newAgency = new Agency
-                        {
-                            AgencyLogoPath = agency.Logopath,
-                            AgencyName = agency.Name,
-                        };
-                        await context.Agencies.AddAsync(newAgency);
-                        await context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                        flag = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        logger.AddException(ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+                AgencyLogoPath = agency.Logopath,
+                AgencyName = agency.Name,
+            };
+            await context.Agencies.AddAsync(newAgency);
+            await context.SaveChangesAsync();
+            flag = true;
             return flag;
         }
 
         public async Task<bool> AddAgencyFeed(AgencyFeedModel agencyfeed)
         {
             bool flag = false;
-            try
+            AgencyFeed newAgencyFeed = await context.AgencyFeeds.Where(a => a.AgencyId == agencyfeed.AgencyId && a.CategoryId == agencyfeed.CategoryId).FirstOrDefaultAsync();
+            if (newAgencyFeed == null)
             {
-                using (var transaction = await context.Database.BeginTransactionAsync())
+                newAgencyFeed = new AgencyFeed
                 {
-                    try
-                    {
-                        AgencyFeed newAgencyFeed = await context.AgencyFeeds.Where(a => a.AgencyId == agencyfeed.AgencyId && a.CategoryId == agencyfeed.CategoryId).FirstOrDefaultAsync();
-                        if (newAgencyFeed == null)
-                        {
-                            newAgencyFeed = new AgencyFeed
-                            {
-                                AgencyId = agencyfeed.AgencyId,
-                                AgencyFeedUrl = agencyfeed.AgencyFeedUrl,
-                                CategoryId = agencyfeed.CategoryId,
-                            };
-                            await context.AgencyFeeds.AddAsync(newAgencyFeed);
-                        }
-                        else
-                        {
-                            newAgencyFeed.AgencyFeedUrl=agencyfeed.AgencyFeedUrl;
-                        }
-                        await context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                        flag = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        logger.AddException(ex);
-                    }
-                }
+                    AgencyId = agencyfeed.AgencyId,
+                    AgencyFeedUrl = agencyfeed.AgencyFeedUrl,
+                    CategoryId = agencyfeed.CategoryId,
+                };
+                await context.AgencyFeeds.AddAsync(newAgencyFeed);
             }
-            catch (Exception ex)
+            else
             {
-                logger.AddException(ex);
+                newAgencyFeed.AgencyFeedUrl = agencyfeed.AgencyFeedUrl;
             }
+            await context.SaveChangesAsync();
+            flag = true;
             return flag;
         }
 
@@ -222,24 +123,17 @@ namespace NewsForYou.DAL
         {
             List<CategoryModel> alldata = null;
 
-            try
+            List<Category> result = await context.Categories.ToListAsync();
+
+            alldata = new List<CategoryModel>();
+
+            foreach (Category category in result)
             {
-                List<Category> result = await context.Categories.ToListAsync();
-
-                alldata = new List<CategoryModel>();
-
-                foreach (Category category in result)
+                alldata.Add(new CategoryModel
                 {
-                    alldata.Add(new CategoryModel
-                    {
-                        Title = category.CategoryTitle,
-                        Id = category.CategoryId,
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
+                    Title = category.CategoryTitle,
+                    Id = category.CategoryId,
+                });
             }
 
             return alldata;
@@ -249,23 +143,16 @@ namespace NewsForYou.DAL
         {
             List<AgencyModel> alldata = new List<AgencyModel>();
 
-            try
-            {
-                List<Agency> result = await context.Agencies.ToListAsync();
+            List<Agency> result = await context.Agencies.ToListAsync();
 
-                foreach (Agency agency in result)
-                {
-                    alldata.Add(new AgencyModel
-                    {
-                        Logopath = agency.AgencyLogoPath,
-                        Name = agency.AgencyName,
-                        Id = agency.AgencyId,
-                    });
-                }
-            }
-            catch (Exception ex)
+            foreach (Agency agency in result)
             {
-                logger.AddException(ex);
+                alldata.Add(new AgencyModel
+                {
+                    Logopath = agency.AgencyLogoPath,
+                    Name = agency.AgencyName,
+                    Id = agency.AgencyId,
+                });
             }
 
             return alldata;
@@ -275,15 +162,8 @@ namespace NewsForYou.DAL
         {
             string url = null;
 
-            try
-            {
-                AgencyFeed agencyfeed = await context.AgencyFeeds.FirstOrDefaultAsync(af => af.CategoryId == categoryid && af.AgencyId == agencyid);
-                url = agencyfeed.AgencyFeedUrl;
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+            AgencyFeed agencyfeed = await context.AgencyFeeds.FirstOrDefaultAsync(af => af.CategoryId == categoryid && af.AgencyId == agencyid);
+            url = agencyfeed.AgencyFeedUrl;
 
             return url;
         }
@@ -291,47 +171,21 @@ namespace NewsForYou.DAL
         public async Task<bool> DeleteAllNews()
         {
             bool flag = false;
-            try
-            {
-                using (var transaction = await context.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE news");
-                        await context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                        flag = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        logger.AddException(ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+            await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE news");
+            await context.SaveChangesAsync();
+            flag = true;
             return flag;
         }
 
         public async Task<List<CategoryModel>> GetCategoriesFromAgencyId(int id)
         {
-            List<CategoryModel> allcategories = new List<CategoryModel>();
+            List<CategoryModel> allcategories = [];
 
-            try
+            allcategories = await context.AgencyFeeds.Where(a => a.AgencyId == id).Select(a => new CategoryModel
             {
-                allcategories = await context.AgencyFeeds.Where(a => a.AgencyId == id).Select(a => new CategoryModel
-                {
-                    Id = a.CategoryId,
-                    Title = a.Category.CategoryTitle
-                }).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+                Id = a.CategoryId,
+                Title = a.Category.CategoryTitle
+            }).ToListAsync();
 
             return allcategories;
         }
@@ -340,24 +194,17 @@ namespace NewsForYou.DAL
         {
             List<NewsModel> allnews = new List<NewsModel>();
 
-            try
+            allnews = await context.News.Where(c => c.AgencyId == id).Select(c => new NewsModel
             {
-                allnews = await context.News.Where(c => c.AgencyId == id).Select(c => new NewsModel
-                {
-                    AgencyId = c.AgencyId,
-                    CategoryId = c.CategoryId,
-                    NewsId = c.NewsId,
-                    NewsTitle = c.NewsTitle,
-                    NewsDescription = c.NewsDescription,
-                    NewsPublishDateTime = c.NewsPublishDateTime,
-                    NewsLink = c.NewsLink,
-                    ClickCount = c.ClickCount,
-                }).OrderByDescending(c => c.NewsPublishDateTime).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+                AgencyId = c.AgencyId,
+                CategoryId = c.CategoryId,
+                NewsId = c.NewsId,
+                NewsTitle = c.NewsTitle,
+                NewsDescription = c.NewsDescription,
+                NewsPublishDateTime = c.NewsPublishDateTime,
+                NewsLink = c.NewsLink,
+                ClickCount = c.ClickCount,
+            }).OrderByDescending(c => c.NewsPublishDateTime).ToListAsync();
 
             return allnews;
         }
@@ -365,20 +212,13 @@ namespace NewsForYou.DAL
         public async Task<List<ReportModel>> GeneratePdf(DateTime start, DateTime end)
         {
             List<ReportModel> data = null;
-            try
+            data = await context.News.Select(n => new ReportModel
             {
-                data = await context.News.Select(n => new ReportModel
-                {
-                    AgencyName=context.Agencies.FirstOrDefault(a=>a.AgencyId==n.AgencyId).AgencyName,
-                    ClickCount= (int)n.ClickCount,
-                    NewsTitle=n.NewsTitle
-                }).OrderByDescending(a=>a.ClickCount).ToListAsync();
+                AgencyName = context.Agencies.FirstOrDefault(a => a.AgencyId == n.AgencyId).AgencyName,
+                ClickCount = (int)n.ClickCount,
+                NewsTitle = n.NewsTitle
+            }).OrderByDescending(a => a.ClickCount).ToListAsync();
 
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
             return data;
         }
 
@@ -433,38 +273,20 @@ namespace NewsForYou.DAL
         public async Task<bool> IncrementNewsClickCount(int id)
         {
             bool flag = false;
-            try
+
+            News news = await context.News.FirstOrDefaultAsync(n => n.NewsId == id);
+            if (news != null)
             {
-                using (var transaction = await context.Database.BeginTransactionAsync())
+                if (news.ClickCount == null)
                 {
-                    try
-                    {
-                        News news = await context.News.FirstOrDefaultAsync(n => n.NewsId == id);
-                        if (news != null)
-                        {
-                            if (news.ClickCount == null)
-                            {
-                                news.ClickCount = 1;
-                            }
-                            else
-                            {
-                                news.ClickCount++;
-                            }
-                            await context.SaveChangesAsync();
-                            await transaction.CommitAsync();
-                            flag = true;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        await transaction.RollbackAsync();
-                        logger.AddException(e);
-                    }
+                    news.ClickCount = 1;
                 }
-            }
-            catch (Exception e)
-            {
-                logger.AddException(e);
+                else
+                {
+                    news.ClickCount++;
+                }
+                await context.SaveChangesAsync();
+                flag = true;
             }
             return flag;
         }
@@ -472,45 +294,29 @@ namespace NewsForYou.DAL
         public async Task<bool> AddNews(List<NewsModel> news, int categoryid, int agencyid)
         {
             bool flag = false;
-            try
+            List<News> resultnews = new List<News>();
+            foreach (NewsModel item in news)
             {
-                using (var transaction = await context.Database.BeginTransactionAsync())
+                bool extnews = await context.News.AnyAsync(n => n.NewsLink == item.NewsLink);
+                if (!extnews)
                 {
-                    try
+                    News n = new News
                     {
-                        foreach (NewsModel item in news)
-                        {
-                            bool extnews = await context.News.AnyAsync(n => n.NewsLink == item.NewsLink);
-                            if (!extnews)
-                            {
-                                News n = new News
-                                {
-                                    AgencyId = agencyid,
-                                    CategoryId = categoryid,
-                                    ClickCount = item.ClickCount,
-                                    NewsDescription = item.NewsDescription,
-                                    NewsLink = item.NewsLink,
-                                    NewsTitle = item.NewsTitle,
-                                    NewsPublishDateTime = item.NewsPublishDateTime
-                                };
-                                await context.News.AddAsync(n);
-                                await context.SaveChangesAsync();
-                            }
-                        }
-                        await transaction.CommitAsync();
-                        flag = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        logger.AddException(ex);
-                    }
+                        AgencyId = agencyid,
+                        CategoryId = categoryid,
+                        ClickCount = item.ClickCount,
+                        NewsDescription = item.NewsDescription,
+                        NewsLink = item.NewsLink,
+                        NewsTitle = item.NewsTitle,
+                        NewsPublishDateTime = item.NewsPublishDateTime
+                    };
+                    resultnews.Add(n);
                 }
             }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
+
+            await context.News.AddRangeAsync(resultnews);
+            await context.SaveChangesAsync();
+            flag = true;
             return flag;
         }
 
@@ -533,10 +339,10 @@ namespace NewsForYou.DAL
 
             foreach (XmlNode itemNode in Nodes)
             {
-                string newstitle = itemNode.SelectSingleNode("title")?.InnerText;
-                string newsdescription = itemNode.SelectSingleNode("description")?.InnerText;
-                string newslink = itemNode.SelectSingleNode("link")?.InnerText;
-                string newsdatetime = itemNode.SelectSingleNode("pubDate")?.InnerText;
+                var newstitle = itemNode.SelectSingleNode("title")?.InnerText;
+                var newsdescription = itemNode.SelectSingleNode("description")?.InnerText;
+                var newslink = itemNode.SelectSingleNode("link")?.InnerText;
+                var newsdatetime = itemNode.SelectSingleNode("pubDate")?.InnerText;
 
                 DateTime newspublishDateTime;
                 if (DateTime.TryParse(newsdatetime, out newspublishDateTime))
@@ -556,20 +362,7 @@ namespace NewsForYou.DAL
 
         public async Task<bool> FindEmail(string email)
         {
-            bool flag = false;
-            try
-            {
-                int count = context.Users.Where(u => u.Email == email).Count();
-                if (count == 0)
-                {
-                    flag = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.AddException(ex);
-            }
-            return flag;
+            return !(await context.Users.Where(u => u.Email == email).AnyAsync());
         }
     }
 }

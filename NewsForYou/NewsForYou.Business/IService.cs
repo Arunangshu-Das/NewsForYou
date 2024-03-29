@@ -9,9 +9,9 @@ namespace NewsForYou.Business
 {
     public interface IService
     {
-        public Task<bool> SignUp(SignUp model);
+        public Task<bool> SignUp(UserModel model);
 
-        public Task<(bool, string)> Login(LoginModel model);
+        public Task<UserModel> Login(LoginModel model);
 
         public Task<bool> AddCategory(CategoryModel category);
 

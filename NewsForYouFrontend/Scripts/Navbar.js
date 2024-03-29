@@ -3,7 +3,6 @@ function checkCookie() {
     var isLoggedIn = cookies.some(cookie => cookie.trim().startsWith('credential='));
     var isAdmin = cookies.some(cookie => cookie.trim().startsWith('isAdmin=true'));
 
-    // Always show logout if logged in, additionally show admin control if isAdmin
     if (isLoggedIn) {
         document.getElementById("logoutLink").style.display = "block";
         document.getElementById("shownews").style.display = "none";

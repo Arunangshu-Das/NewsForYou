@@ -28,22 +28,11 @@ function exportData() {
         startDate: startDate,
         endDate: endDate
     }
-    $.ajax({
-        url: 'https://localhost:7235/api/generatepdf',
-        type: 'POST',
-        data: JSON.stringify(payload),
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function (result) {
-            exportHtml(result.report)
-        },
-        error: function () {
-            alert('Error while making the AJAX call.');
-        }
-    });
+    makeGetRequest('report', payload, exportHtml, error,true);
 }
 
 function exportHtml(data) {
+    data=data.report
     var dataTable = $('#productTable').DataTable(); // Get existing DataTable instance
 
     // Clear existing data and redraw table
@@ -106,47 +95,43 @@ function exportPdf() {
         startDate: startDate,
         endDate: endDate
     }
-    $.ajax({
-        url: 'https://localhost:7235/api/generatepdf',
-        type: 'POST',
-        data: JSON.stringify(payload),
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function (result) {
-            var reportContent = `<h3>Generated Report</h3>`;
+    makeGetRequest('report',payload,makePdf,error,true);
+}
 
-            reportContent += `<div><table id="reporttable">
-            <tr>
-                <th>Agency Name</th>
-                <th>News Title</th>
-                <th>Click Count</th>
-            </tr>`;
-
-            for (var i = 0; i < result.report.length; i++) {
-                var entry = result.report[i];
-                reportContent += `<tr>
-                    <td>${entry.agencyName}</td>
-                    <td>${entry.newsTitle}</td>
-                    <td>${entry.clickCount}</td>
-                </tr>`;
-            }
-
-            reportContent += `</table></div>`;
-
-            var pdf = new jsPDF();
-
-            pdf.fromHTML(reportContent, 15, 30);
-
-            pdf.save('exported_report.pdf');
-        },
-        error: function () {
-            alert('Error while making the AJAX call.');
-        }
-    });
+function error(){
+    alert('Error while making the AJAX call.');
 }
 
 function isAdmin() {
     var cookies = document.cookie.split(';');
     var adminCookie = cookies.find(cookie => cookie.trim().startsWith('isAdmin='));
     return adminCookie && adminCookie.split('=')[1] === 'true';
+}
+
+function makePdf(result){
+    var reportContent = `<h3>Generated Report</h3>`;
+
+    reportContent += `<div><table id="reporttable">
+    <tr>
+        <th>Agency Name</th>
+        <th>News Title</th>
+        <th>Click Count</th>
+    </tr>`;
+
+    for (var i = 0; i < result.report.length; i++) {
+        var entry = result.report[i];
+        reportContent += `<tr>
+            <td>${entry.agencyName}</td>
+            <td>${entry.newsTitle}</td>
+            <td>${entry.clickCount}</td>
+        </tr>`;
+    }
+
+    reportContent += `</table></div>`;
+
+    var pdf = new jsPDF();
+
+    pdf.fromHTML(reportContent, 15, 30);
+
+    pdf.save('exported_report.pdf');
 }

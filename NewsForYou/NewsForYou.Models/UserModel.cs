@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NewsForYou.Models
 {
-    public class SignUp
+    public class UserModel
     {
         public string Name {  get; set; }
         public string Email { get; set; }
