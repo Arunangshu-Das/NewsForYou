@@ -10,12 +10,12 @@ $(document).ready(function () {
 
 
 function addCategory() {
-    if (document.getElementById("categoryname").value == "") {
+    if (document.getElementById("categoryname").value.trim() == "") {
         alert("Enter all value to procced");
         return;
     }
     var payload = {
-        title: document.getElementById("categoryname").value
+        title: document.getElementById("categoryname").value.trim()
     }
     // $.ajax({
     //     url: 'https://localhost:7235/api/category',
@@ -40,7 +40,7 @@ function addCategory() {
 }
 
 function addAgency() {
-    if (document.getElementById("agencyname").value == "" || document.getElementById("logopath").value == "") {
+    if (document.getElementById("agencyname").value.trim() == "" || document.getElementById("logopath").value.trim() == "") {
         alert("Enter all value to procced");
         return;
     }
@@ -56,14 +56,14 @@ function addAgency() {
 }
 
 function addAgencyFeed() {
-    if (document.getElementById("feedcategory").value == "") {
+    if (document.getElementById("feedcategory").value.trim() == "") {
         alert("Enter all value to procced");
         return;
     }
     var payload = {
         agencyId: parseInt(document.getElementById("feedagency").value),
         categoryId: parseInt(document.getElementById("feedcategory").value),
-        agencyFeedUrl: document.getElementById("feedurl").value,
+        agencyFeedUrl: document.getElementById("feedurl").value.trim(),
     }
     makePostRequest('addagencyfeed',payload,function(){
         alert("Feed link added");

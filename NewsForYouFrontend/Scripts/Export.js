@@ -108,15 +108,18 @@ function isAdmin() {
     return adminCookie && adminCookie.split('=')[1] === 'true';
 }
 
-function makePdf(result){
-    var reportContent = `<h3>Generated Report</h3>`;
-
-    reportContent += `<div><table id="reporttable">
-    <tr>
-        <th>Agency Name</th>
-        <th>News Title</th>
-        <th>Click Count</th>
-    </tr>`;
+function makePdf(result) {
+    var reportContent = `<div class="container">
+        <h1 class="text-center p-3 mb-4 bg-danger text-white">Generated Report</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Agency Name</th>
+                    <th scope="col">News Title</th>
+                    <th scope="col">Click Count</th>
+                </tr>
+            </thead>
+            <tbody>`;
 
     for (var i = 0; i < result.report.length; i++) {
         var entry = result.report[i];
@@ -127,11 +130,15 @@ function makePdf(result){
         </tr>`;
     }
 
-    reportContent += `</table></div>`;
+    reportContent += `</tbody>
+        </table>
+    </div>`;
 
     var pdf = new jsPDF();
 
-    pdf.fromHTML(reportContent, 15, 30);
+    pdf.fromHTML(reportContent, 15, 15, {
+        'width': 170
+    });
 
     pdf.save('exported_report.pdf');
 }
