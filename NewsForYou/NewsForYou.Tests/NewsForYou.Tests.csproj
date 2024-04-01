@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NewsForYou.DAL\NewsForYou.DAL.csproj" />
     <ProjectReference Include="..\NewsForYou\NewsForYou.csproj" />
   </ItemGroup>
 

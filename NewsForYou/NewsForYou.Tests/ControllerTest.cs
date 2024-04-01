@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NewsForYou.Tests
 {
-    public class UnitTest1
+    public class ControllerTest
     {
         [Fact]
         public async Task TestLoginSuccess()
